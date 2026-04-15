@@ -1,0 +1,738 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>活動報名與兌獎系統 Pro</title>
+  
+  <!-- 載入 Tailwind CSS (CDN) -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 載入 Lucide Icons (CDN) -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    /* 自訂動畫與淡入效果 */
+    .animate-fade-in { animation: fadeIn 0.4s ease-out forwards; }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .hidden-view { display: none !important; }
+  </style>
+</head>
+<body class="bg-gray-50 font-sans text-gray-800 antialiased overflow-x-hidden">
+
+  <!-- ========================================== -->
+  <!-- 載入中畫面 (Loading)                       -->
+  <!-- ========================================== -->
+  <div id="loadingView" class="min-h-screen flex items-center justify-center bg-gray-50 fixed inset-0 z-50">
+    <div class="text-indigo-600 font-bold text-xl flex flex-col items-center gap-4">
+      <i data-lucide="refresh-cw" class="w-8 h-8 animate-spin"></i>
+      正在連線至 Firebase 雲端系統...
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 入口選擇畫面 (Portal)                      -->
+  <!-- ========================================== -->
+  <div id="portalView" class="hidden-view min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 flex flex-col items-center justify-center p-6">
+    <div class="max-w-4xl w-full">
+      <div class="text-center mb-16 animate-fade-in">
+        <div class="inline-flex items-center justify-center p-3 bg-indigo-100 rounded-2xl mb-6 shadow-sm">
+          <i data-lucide="layout-dashboard" class="w-8 h-8 text-indigo-600"></i>
+        </div>
+        <h1 class="text-4xl md:text-5xl font-black text-slate-900 mb-6 tracking-tight">活動報名與兌獎系統 <span class="text-indigo-600">Pro</span></h1>
+        <p class="text-slate-500 text-lg font-medium">請選擇您要進入的操作介面</p>
+      </div>
+      
+      <div class="grid md:grid-cols-2 gap-8 md:gap-12 animate-fade-in" style="animation-delay: 0.1s;">
+        <!-- 前台入口 -->
+        <div onclick="switchAppMode('frontend')" class="bg-white/70 backdrop-blur-lg p-10 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.04)] border border-white cursor-pointer hover:shadow-[0_8px_40px_rgb(99,102,241,0.15)] hover:border-indigo-100 transition-all duration-300 transform hover:-translate-y-2 group text-center relative overflow-hidden">
+          <div class="w-24 h-24 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-3xl shadow-lg shadow-indigo-500/30 flex items-center justify-center mx-auto mb-8 transform group-hover:scale-110 group-hover:rotate-3 transition-all duration-300">
+            <i data-lucide="smartphone" class="w-12 h-12 text-white"></i>
+          </div>
+          <h2 class="text-3xl font-black text-slate-800 mb-4">前台報名端</h2>
+          <p class="text-slate-500 mb-8 leading-relaxed font-medium">專為行動裝置設計的流暢體驗。<br/>供參加者進行驗證、資料填寫與進度查詢。</p>
+          <div class="inline-flex items-center gap-2 text-indigo-600 font-bold bg-indigo-50 px-6 py-3 rounded-full group-hover:bg-indigo-100 transition-colors">
+            點擊進入 <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </div>
+        </div>
+
+        <!-- 後台入口 -->
+        <div onclick="switchAppMode('backendLogin')" class="bg-slate-900 p-10 rounded-[2.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.12)] border border-slate-800 cursor-pointer hover:shadow-[0_8px_40px_rgb(0,0,0,0.25)] hover:border-slate-700 transition-all duration-300 transform hover:-translate-y-2 group text-center relative overflow-hidden">
+          <div class="w-24 h-24 bg-gradient-to-br from-slate-700 to-slate-800 rounded-3xl shadow-lg shadow-slate-900/50 flex items-center justify-center mx-auto mb-8 transform group-hover:scale-110 group-hover:-rotate-3 transition-all duration-300 border border-slate-600">
+            <i data-lucide="lock" class="w-12 h-12 text-slate-300"></i>
+          </div>
+          <h2 class="text-3xl font-black text-white mb-4">後台管理端</h2>
+          <p class="text-slate-400 mb-8 leading-relaxed font-medium">強大的桌面級管理介面。<br/>包含密碼保護、訂單狀態管理與資料匯出入。</p>
+          <div class="inline-flex items-center gap-2 text-slate-300 font-bold bg-slate-800 px-6 py-3 rounded-full group-hover:bg-slate-700 group-hover:text-white transition-colors">
+            需要密碼驗證 <i data-lucide="chevron-right" class="w-4 h-4"></i>
+          </div>
+        </div>
+      </div>
+      
+      <div class="mt-16 text-center text-sm font-medium text-slate-500 animate-fade-in" style="animation-delay: 0.3s;">
+        <p>系統狀態：<span class="text-green-600 bg-green-50 px-2 py-1 rounded">已連線至 Firebase 雲端資料庫</span></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 前台畫面 (Frontend)                        -->
+  <!-- ========================================== -->
+  <div id="frontendView" class="hidden-view bg-black min-h-screen flex items-center justify-center text-white">
+    <div class="w-full max-w-md h-screen sm:h-[85vh] bg-gray-900 border border-gray-800 sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden relative">
+      
+      <!-- Header -->
+      <div class="bg-gray-800 text-white p-4 flex justify-between items-center shadow-md z-10 border-b border-gray-700">
+        <div class="w-8"></div>
+        <h1 class="text-lg font-bold">活動兌獎</h1>
+        <button onclick="showExitPrompt()" class="w-8 flex justify-end text-gray-400 hover:text-white transition">
+          <i data-lucide="settings" class="w-5 h-5"></i>
+        </button>
+      </div>
+
+      <!-- 返回系統入口：密碼彈出視窗 -->
+      <div id="exitPromptModal" class="hidden-view absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-6">
+        <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
+          <h3 class="text-xl font-bold text-white text-center mb-4">返回系統入口</h3>
+          <div>
+            <label class="block text-sm text-gray-400 mb-2">請輸入管理員密碼</label>
+            <input type="password" id="exitPasswordInput" placeholder="輸入密碼" class="w-full p-3 bg-gray-900 border border-gray-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none" />
+          </div>
+          <p id="exitPasswordError" class="text-red-500 text-sm hidden-view">密碼錯誤</p>
+          <div class="flex gap-3 mt-6">
+            <button onclick="hideExitPrompt()" class="flex-1 py-3 bg-gray-700 text-gray-300 rounded-xl font-medium hover:bg-gray-600 transition">取消</button>
+            <button onclick="verifyExitPassword()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium shadow-md hover:bg-blue-700 transition">確認</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-6 flex flex-col justify-center relative">
+        
+        <!-- 前台首頁 -->
+        <div id="frontHome" class="space-y-6 animate-fade-in">
+          <div class="text-center">
+            <i data-lucide="smartphone" class="w-16 h-16 mx-auto text-blue-500 mb-4"></i>
+            <h2 class="text-2xl font-bold text-white">歡迎來到活動專區</h2>
+          </div>
+          <button onclick="switchFrontView('verify')" class="w-full py-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-semibold text-lg shadow-lg transition transform hover:scale-105">開始驗證報名</button>
+          <button onclick="switchFrontView('status')" class="w-full py-4 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-xl font-semibold text-lg shadow transition transform hover:scale-105 border border-gray-700">查詢進度</button>
+        </div>
+
+        <!-- 手機驗證 -->
+        <div id="frontVerify" class="hidden-view space-y-6 animate-fade-in">
+          <h2 class="text-2xl font-bold text-white border-b border-gray-700 pb-2">手機號碼驗證</h2>
+          <div class="space-y-2">
+            <label class="text-sm text-gray-400 font-medium">請輸入您的手機號碼</label>
+            <input type="tel" id="inputPhone" placeholder="例如: 0912345678" class="w-full p-4 bg-gray-800 border border-gray-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg placeholder-gray-500" />
+          </div>
+          <div id="verifyError" class="hidden-view p-3 bg-red-900/50 border border-red-800 text-red-200 rounded-lg flex items-center gap-2"></div>
+          <div class="flex gap-3 pt-4">
+            <button onclick="switchFrontView('home')" class="flex-1 py-3 bg-gray-800 text-gray-300 border border-gray-700 rounded-xl font-medium">返回</button>
+            <button onclick="handleVerify()" class="flex-1 py-3 bg-blue-600 text-white rounded-xl font-medium shadow-md">下一步</button>
+          </div>
+        </div>
+
+        <!-- 填寫資料 -->
+        <div id="frontForm" class="hidden-view space-y-6 animate-fade-in">
+          <div class="bg-blue-900/30 border border-blue-800 p-4 rounded-xl text-blue-300 text-sm mb-6 flex items-center gap-2">
+            <i data-lucide="shield-check" class="w-5 h-5"></i> 驗證成功！請填寫以下資訊
+          </div>
+          <div class="space-y-2">
+            <label class="text-sm text-gray-400 font-medium">Battle tag (遊戲 ID)</label>
+            <input type="text" id="inputBattleTag" placeholder="支援中/英/數字混合" class="w-full p-4 bg-gray-800 border border-gray-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none text-lg placeholder-gray-500" />
+            <p id="displayCurrentPhone" class="text-xs text-gray-500 mt-1">目前綁定手機: --</p>
+          </div>
+          <div id="formError" class="hidden-view text-red-400 text-sm"></div>
+          <button onclick="handleSubmit()" class="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg mt-6">確認送出</button>
+        </div>
+
+        <!-- 成功畫面 -->
+        <div id="frontSuccess" class="hidden-view space-y-8 text-center animate-fade-in py-8">
+          <i data-lucide="check-circle" class="w-24 h-24 mx-auto text-green-500 mb-4"></i>
+          <div>
+            <p class="text-gray-400 font-medium mb-1">您的專屬序號</p>
+            <div id="displaySequence" class="text-6xl font-black text-white tracking-wider bg-gray-800 py-4 rounded-2xl border border-gray-700">000</div>
+          </div>
+          <div class="bg-blue-900/30 border border-blue-800 p-4 rounded-xl text-blue-300 font-medium">已完成上傳，請於活動結束後領取您的禮品</div>
+          <button onclick="switchFrontView('home')" class="w-full py-4 bg-gray-800 border border-gray-700 text-white rounded-xl font-medium mt-4 hover:bg-gray-700 transition">回首頁</button>
+        </div>
+
+        <!-- 查詢進度 -->
+        <div id="frontStatus" class="hidden-view space-y-6 animate-fade-in">
+          <h2 class="text-2xl font-bold text-white border-b border-gray-700 pb-2">查詢進度</h2>
+          
+          <div class="bg-gray-800 p-4 rounded-xl border border-gray-700 text-center">
+            <p class="text-gray-400 text-sm mb-1">目前進度</p>
+            <p id="displayLastCompleted" class="text-3xl font-black text-blue-400">--</p>
+          </div>
+
+          <div class="flex gap-2">
+            <input type="text" id="searchSeq" placeholder="請輸入 3 碼序號 (如 001)" class="flex-1 p-4 bg-gray-800 border border-gray-700 text-white rounded-xl focus:ring-2 focus:ring-blue-500 focus:outline-none placeholder-gray-500" />
+            <button onclick="handleSearch()" class="px-6 bg-blue-600 text-white rounded-xl flex items-center justify-center hover:bg-blue-700 transition">
+              <i data-lucide="search" class="w-5 h-5"></i>
+            </button>
+          </div>
+          <div id="searchError" class="hidden-view p-3 bg-red-900/50 border border-red-800 text-red-200 rounded-lg"></div>
+          
+          <div id="searchResultCard" class="hidden-view mt-6 bg-gray-800 border border-gray-700 rounded-2xl shadow-sm overflow-hidden">
+             <!-- Javascript 動態插入查詢結果 -->
+          </div>
+          
+          <button onclick="switchFrontView('home')" class="w-full py-4 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded-xl font-medium mt-6 transition">返回首頁</button>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 後台登入畫面 (Backend Login)               -->
+  <!-- ========================================== -->
+  <div id="backendLoginView" class="hidden-view min-h-screen bg-gray-100 flex items-center justify-center">
+    <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-sm">
+      <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">後台管理登入</h2>
+      <div class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">管理員密碼</label>
+          <input type="password" id="adminPassword" placeholder="請輸入密碼" class="w-full p-3 border rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" />
+        </div>
+        <p id="loginError" class="text-red-500 text-sm hidden-view">密碼錯誤</p>
+        <button onclick="handleAdminLogin()" class="w-full bg-gray-900 text-white py-3 rounded-lg hover:bg-gray-800 transition">登入</button>
+        <button onclick="switchAppMode('portal')" class="w-full bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition mt-2">返回入口</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 後台主畫面 (Backend Dashboard)             -->
+  <!-- ========================================== -->
+  <div id="backendView" class="hidden-view min-h-screen bg-gray-100 flex">
+    <!-- Sidebar -->
+    <div class="w-64 bg-gray-900 text-white flex flex-col shadow-xl z-20">
+      <div class="p-6 border-b border-gray-800">
+        <h1 class="text-xl font-black tracking-wider text-blue-400">系統管理後台</h1>
+        <p class="text-xs text-gray-500 mt-2">Desktop Manager</p>
+      </div>
+      <nav class="flex-1 p-4 space-y-2">
+          <button onclick="switchBackView('orders')" id="btnBackOrders" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium bg-indigo-600 text-white shadow-lg shadow-indigo-900/50">
+            <i data-lucide="list" class="w-5 h-5"></i> 訂單管理
+          </button>
+          <button onclick="switchBackView('system')" id="btnBackSystem" class="w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-gray-400 hover:bg-slate-800 hover:text-white">
+            <i data-lucide="settings" class="w-5 h-5"></i> 系統設定
+        </button>
+      </nav>
+      <div class="p-4 border-t border-gray-800">
+        <button onclick="switchAppMode('portal')" class="w-full flex items-center justify-center gap-2 px-4 py-2 bg-gray-800 text-gray-300 rounded hover:bg-gray-700 transition">
+          <i data-lucide="log-out" class="w-4 h-4"></i> 登出後台
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="flex-1 flex flex-col overflow-hidden relative">
+      <!-- Header -->
+      <header class="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200 px-8 py-5 flex justify-between items-center z-10 sticky top-0">
+        <h2 id="backHeaderTitle" class="text-2xl font-bold text-slate-800 tracking-tight">訂單總覽</h2>
+        <div class="flex gap-6 text-sm">
+          <div class="flex flex-col items-end">
+            <span class="text-slate-500 text-xs">目前總訂單</span>
+            <span id="statTotalOrders" class="font-bold text-slate-800 text-lg">0</span>
+          </div>
+          <div class="w-px h-10 bg-slate-200"></div>
+          <div class="flex flex-col items-end">
+            <span class="text-slate-500 text-xs">下個流水號</span>
+            <span id="statNextSeq" class="font-bold text-indigo-600 text-lg">#001</span>
+          </div>
+        </div>
+      </header>
+
+      <main class="flex-1 overflow-y-auto p-8">
+        
+        <!-- 訂單管理分頁 -->
+        <div id="backOrdersView" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead>
+                <tr class="bg-slate-50 text-slate-500 border-b border-slate-200 text-sm tracking-wide">
+                  <th class="p-5 font-semibold w-24">序號</th>
+                  <th class="p-5 font-semibold">手機號碼</th>
+                  <th class="p-5 font-semibold">Battle tag</th>
+                  <th class="p-5 font-semibold w-48">狀態</th>
+                  <th class="p-5 font-semibold">備註</th>
+                </tr>
+              </thead>
+              <tbody id="ordersTableBody">
+                <!-- Javascript 動態產生表格內容 -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- 系統設定分頁 -->
+        <div id="backSystemView" class="hidden-view grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl">
+          <!-- 匯入匯出區塊 -->
+          <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><i data-lucide="upload" class="w-6 h-6 text-indigo-500"></i> 資料匯入與匯出</h3>
+            
+            <div class="space-y-6">
+              <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                <label class="block text-sm font-bold text-slate-700 mb-3">匯入白名單 (可輸入多筆，換行分隔)</label>
+                <textarea id="importText" class="w-full bg-white border border-slate-200 rounded-xl p-4 h-32 focus:ring-2 focus:ring-indigo-500 outline-none text-sm shadow-inner transition-all resize-none" placeholder="0912345678&#10;0987654321"></textarea>
+                <button onclick="handleImportCSV()" class="mt-4 bg-slate-800 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-slate-900 transition shadow-md flex items-center gap-2">
+                  <i data-lucide="upload" class="w-4 h-4"></i> 確定匯入名單
+                </button>
+              </div>
+
+              <div class="pt-6 border-t border-slate-100">
+                <label class="block text-sm font-bold text-slate-700 mb-3">匯出報名訂單 (CSV 格式)</label>
+                <button onclick="handleExportCSV()" class="w-full sm:w-auto bg-green-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-green-700 transition shadow-md shadow-green-600/20 flex items-center justify-center gap-2">
+                  <i data-lucide="download" class="w-4 h-4"></i> 下載最新訂單資料
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- 危險操作區塊 -->
+          <div class="bg-white p-8 rounded-3xl shadow-sm border border-red-100">
+            <h3 class="text-xl font-bold text-red-600 mb-6 flex items-center gap-3"><i data-lucide="settings" class="w-6 h-6"></i> 系統危險操作</h3>
+            <div class="bg-red-50 text-red-800 p-5 rounded-2xl text-sm mb-6 border border-red-100 leading-relaxed">
+              <strong class="block text-red-900 text-base mb-1">⚠️ 警告：這是一項不可逆的操作</strong>
+              執行此操作將會<strong>徹底清空所有的訂單記錄</strong>，並將下一次的報名序號重新設定回 <strong>001</strong>。請確保您已匯出備份資料。
+            </div>
+            <button onclick="handleReset()" class="bg-red-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-red-700 transition shadow-md shadow-red-600/20 flex items-center gap-2">
+              <i data-lucide="refresh-cw" class="w-4 h-4"></i> 確認一鍵重置系統
+            </button>
+            
+            <div class="mt-10 pt-6 border-t border-slate-100">
+               <div class="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
+                  <span class="text-slate-600 font-medium">系統目前白名單總數</span>
+                  <span id="statWhitelistCount" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg font-bold text-lg">0 筆</span>
+               </div>
+            </div>
+          </div>
+        </div>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- 應用程式邏輯 (Vanilla JS + Firebase Module)-->
+  <!-- ========================================== -->
+  <script type="module">
+    // 使用 ES Modules 載入 Firebase (v10 API)
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-auth.js";
+    import { getFirestore, collection, onSnapshot, doc, setDoc, updateDoc, deleteDoc, addDoc } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-firestore.js";
+
+    // --- Firebase 設定與初始化 ---
+    const firebaseConfig = {
+      apiKey: "AIzaSyDj4VfxO-Kt3QpjBKuOGIW-EGhZbKRVzAg",
+      authDomain: "live-print-02.firebaseapp.com",
+      projectId: "live-print-02",
+      storageBucket: "live-print-02.firebasestorage.app",
+      messagingSenderId: "962304417169",
+      appId: "1:962304417169:web:32c9049042275a4b7c0e30",
+      measurementId: "G-Z9Q1Q2LEXJ"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+    const db = getFirestore(app);
+    const appId = "live-print-02-app";
+
+    // --- 全域狀態 (State) ---
+    let whitelist = [];
+    let orders = [];
+    let sequenceCounter = 1;
+    let currentUserPhone = '';
+    let currentEditNoteId = null;
+
+    // --- 畫面切換控制 ---
+    window.switchAppMode = (mode) => {
+      document.getElementById('portalView').classList.add('hidden-view');
+      document.getElementById('frontendView').classList.add('hidden-view');
+      document.getElementById('backendLoginView').classList.add('hidden-view');
+      document.getElementById('backendView').classList.add('hidden-view');
+
+      if (mode === 'portal') document.getElementById('portalView').classList.remove('hidden-view');
+      if (mode === 'frontend') {
+        document.getElementById('frontendView').classList.remove('hidden-view');
+        switchFrontView('home');
+      }
+      if (mode === 'backendLogin') {
+        document.getElementById('adminPassword').value = '';
+        document.getElementById('loginError').classList.add('hidden-view');
+        document.getElementById('backendLoginView').classList.remove('hidden-view');
+      }
+      if (mode === 'backend') document.getElementById('backendView').classList.remove('hidden-view');
+      
+      lucide.createIcons();
+    };
+
+    // --- 密碼保護：返回入口 ---
+    window.showExitPrompt = () => {
+      document.getElementById('exitPasswordInput').value = '';
+      document.getElementById('exitPasswordError').classList.add('hidden-view');
+      document.getElementById('exitPromptModal').classList.remove('hidden-view');
+    };
+
+    window.hideExitPrompt = () => {
+      document.getElementById('exitPromptModal').classList.add('hidden-view');
+    };
+
+    window.verifyExitPassword = () => {
+      const pwd = document.getElementById('exitPasswordInput').value;
+      if (pwd === 'admin888') {
+        hideExitPrompt();
+        switchAppMode('portal');
+      } else {
+        document.getElementById('exitPasswordError').classList.remove('hidden-view');
+      }
+    };
+
+    window.switchFrontView = (view) => {
+      const views = ['frontHome', 'frontVerify', 'frontForm', 'frontSuccess', 'frontStatus'];
+      views.forEach(v => document.getElementById(v).classList.add('hidden-view'));
+      
+      // 清空輸入框狀態
+      document.getElementById('inputPhone').value = '';
+      document.getElementById('inputBattleTag').value = '';
+      document.getElementById('searchSeq').value = '';
+      document.getElementById('verifyError').classList.add('hidden-view');
+      document.getElementById('formError').classList.add('hidden-view');
+      document.getElementById('searchError').classList.add('hidden-view');
+      document.getElementById('searchResultCard').classList.add('hidden-view');
+
+      // 更新進度顯示
+      const completed = orders.filter(o => o.status === '完成');
+      const lastCompleted = completed.length > 0 ? completed[completed.length - 1].sequenceId : '--';
+      document.getElementById('displayLastCompleted').innerText = lastCompleted;
+
+      const target = {
+        'home': 'frontHome',
+        'verify': 'frontVerify',
+        'form': 'frontForm',
+        'success': 'frontSuccess',
+        'status': 'frontStatus'
+      }[view];
+      
+      if(target) document.getElementById(target).classList.remove('hidden-view');
+      lucide.createIcons();
+    };
+
+    window.switchBackView = (view) => {
+      document.getElementById('backOrdersView').classList.add('hidden-view');
+      document.getElementById('backSystemView').classList.add('hidden-view');
+      
+      const btnOrders = document.getElementById('btnBackOrders');
+      const btnSystem = document.getElementById('btnBackSystem');
+      
+      // Reset button styles
+      btnOrders.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-gray-400 hover:bg-slate-800 hover:text-white";
+      btnSystem.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium text-gray-400 hover:bg-slate-800 hover:text-white";
+
+      if(view === 'orders') {
+        document.getElementById('backOrdersView').classList.remove('hidden-view');
+        document.getElementById('backHeaderTitle').innerText = '訂單總覽';
+        btnOrders.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium bg-indigo-600 text-white shadow-lg shadow-indigo-900/50";
+      } else {
+        document.getElementById('backSystemView').classList.remove('hidden-view');
+        document.getElementById('backHeaderTitle').innerText = '系統設定與管理';
+        btnSystem.className = "w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all font-medium bg-indigo-600 text-white shadow-lg shadow-indigo-900/50";
+      }
+      lucide.createIcons();
+    };
+
+    // --- 前台邏輯 (Frontend) ---
+    window.handleVerify = () => {
+      const phone = document.getElementById('inputPhone').value.trim();
+      const errBox = document.getElementById('verifyError');
+      errBox.classList.add('hidden-view');
+
+      if (!phone) {
+        errBox.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5"></i> 請輸入手機號碼`;
+        errBox.classList.remove('hidden-view');
+        lucide.createIcons();
+        return;
+      }
+      if (!whitelist.includes(phone)) {
+        errBox.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5"></i> 驗證失敗：請向工作人員確認`;
+        errBox.classList.remove('hidden-view');
+        lucide.createIcons();
+        return;
+      }
+
+      const existingOrder = orders.find(o => o.phone === phone && o.status !== '取消');
+      if (existingOrder) {
+        errBox.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5"></i> 此手機號碼已成功提交過了`;
+        errBox.classList.remove('hidden-view');
+        lucide.createIcons();
+        return;
+      }
+
+      currentUserPhone = phone;
+      document.getElementById('displayCurrentPhone').innerText = `目前綁定手機: ${phone}`;
+      switchFrontView('form');
+    };
+
+    window.handleSubmit = async () => {
+      const battleTag = document.getElementById('inputBattleTag').value.trim();
+      const errBox = document.getElementById('formError');
+      errBox.classList.add('hidden-view');
+
+      if (!battleTag) {
+        errBox.innerText = '請輸入 Battle tag';
+        errBox.classList.remove('hidden-view');
+        return;
+      }
+
+      const seqStr = String(sequenceCounter).padStart(3, '0');
+      const newOrder = {
+        sequenceId: seqStr,
+        phone: currentUserPhone,
+        battleTag: battleTag,
+        status: '處理中',
+        note: '',
+        createdAt: new Date().toLocaleString(),
+        timestamp: Date.now()
+      };
+
+      try {
+        await addDoc(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), newOrder);
+        document.getElementById('displaySequence').innerText = seqStr;
+        switchFrontView('success');
+      } catch (err) {
+        console.error(err);
+        errBox.innerText = '送出失敗，請稍後再試';
+        errBox.classList.remove('hidden-view');
+      }
+    };
+
+    window.handleSearch = () => {
+      const searchVal = document.getElementById('searchSeq').value.trim();
+      const errBox = document.getElementById('searchError');
+      const resultCard = document.getElementById('searchResultCard');
+      
+      errBox.classList.add('hidden-view');
+      resultCard.classList.add('hidden-view');
+
+      if(!searchVal) return;
+
+      const order = orders.find(o => o.sequenceId === searchVal);
+      if (order) {
+        let statusHtml = '';
+        if (order.status === '處理中') statusHtml = `<span class="bg-yellow-900/50 text-yellow-300 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 border border-yellow-800"><i data-lucide="clock" class="w-4 h-4"></i>處理中</span>`;
+        if (order.status === '完成') statusHtml = `<span class="bg-green-900/50 text-green-300 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 border border-green-800"><i data-lucide="check-circle" class="w-4 h-4"></i>完成</span>`;
+        if (order.status === '取消') statusHtml = `<span class="bg-red-900/50 text-red-300 px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 border border-red-800"><i data-lucide="x-circle" class="w-4 h-4"></i>取消</span>`;
+
+        const maskedPhone = order.phone.replace(/(\d{4})\d{3}(\d{3})/, '$1***$2');
+
+        resultCard.innerHTML = `
+          <div class="bg-gray-900 px-4 py-3 border-b border-gray-700 flex justify-between items-center">
+            <span class="font-bold text-gray-200">序號 #${order.sequenceId}</span>
+            ${statusHtml}
+          </div>
+          <div class="p-4 space-y-3">
+            <div class="flex justify-between border-b border-gray-700 pb-2"><span class="text-gray-400">Battle tag</span><span class="font-medium text-white">${order.battleTag}</span></div>
+            <div class="flex justify-between border-b border-gray-700 pb-2"><span class="text-gray-400">手機號碼</span><span class="font-medium text-white">${maskedPhone}</span></div>
+            <div class="flex justify-between"><span class="text-gray-400">建立時間</span><span class="text-sm text-gray-300">${order.createdAt}</span></div>
+          </div>
+        `;
+        resultCard.classList.remove('hidden-view');
+        lucide.createIcons();
+      } else {
+        errBox.innerText = '找不到此序號的訂單';
+        errBox.classList.remove('hidden-view');
+      }
+    };
+
+    // --- 後台邏輯 (Backend) ---
+    window.handleAdminLogin = () => {
+      const pwd = document.getElementById('adminPassword').value;
+      if(pwd === 'admin888') {
+        switchAppMode('backend');
+      } else {
+        document.getElementById('loginError').classList.remove('hidden-view');
+      }
+    };
+
+    window.handleImportCSV = async () => {
+      const importText = document.getElementById('importText').value;
+      if (!importText.trim()) return alert("請輸入名單");
+      const phones = importText.split(/[\n,]+/).map(p => p.trim()).filter(p => p.length > 0);
+      const uniquePhones = [...new Set([...whitelist, ...phones])];
+      
+      try {
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'system', 'whitelist'), { phones: uniquePhones });
+        document.getElementById('importText').value = '';
+        alert(`成功匯入 ${phones.length} 筆，目前白名單共 ${uniquePhones.length} 筆`);
+      } catch (err) {
+        console.error(err);
+        alert("匯入失敗");
+      }
+    };
+
+    window.handleExportCSV = () => {
+      const headers = ["序號", "手機號碼", "Battle tag", "狀態", "備註", "建立時間"];
+      const rows = orders.map(o => [o.sequenceId, o.phone, o.battleTag, o.status, o.note || '', o.createdAt]);
+      const csvContent = "data:text/csv;charset=utf-8,\uFEFF" 
+        + headers.join(",") + "\n" 
+        + rows.map(e => e.join(",")).join("\n");
+      
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `活動訂單_${new Date().getTime()}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    };
+
+    window.handleReset = async () => {
+      if(window.confirm("警告：這將會清空所有訂單並將序號重置為 001！確定執行？")) {
+        try {
+          for (const order of orders) {
+            await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', order.id));
+          }
+          alert("系統已重置。");
+        } catch(err) {
+          console.error(err);
+          alert("重置發生錯誤");
+        }
+      }
+    };
+
+    // 表格操作 (委派事件)
+    window.changeOrderStatus = async (id, newStatus) => {
+      await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id), { status: newStatus });
+    };
+
+    window.startEditNote = (id) => {
+      currentEditNoteId = id;
+      renderOrdersTable(); // 重新渲染以顯示輸入框
+    };
+
+    window.saveOrderNote = async (id) => {
+      const inputEl = document.getElementById(`noteInput-${id}`);
+      if(inputEl) {
+        await updateDoc(doc(db, 'artifacts', appId, 'public', 'data', 'orders', id), { note: inputEl.value });
+      }
+      currentEditNoteId = null;
+    };
+
+    // 渲染表格內容
+    const renderOrdersTable = () => {
+      const tbody = document.getElementById('ordersTableBody');
+      const sortedOrders = [...orders].sort((a, b) => b.timestamp - a.timestamp);
+
+      if (sortedOrders.length === 0) {
+        tbody.innerHTML = `<tr><td colSpan="5" class="p-12 text-center text-slate-400 font-medium">目前尚無任何訂單資料</td></tr>`;
+        return;
+      }
+
+      let html = '';
+      sortedOrders.forEach(order => {
+        let selectClass = "px-4 py-2 rounded-xl text-sm font-bold border outline-none cursor-pointer appearance-none shadow-sm transition-all ";
+        if(order.status === '處理中') selectClass += "bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100";
+        else if (order.status === '完成') selectClass += "bg-green-50 text-green-700 border-green-200 hover:bg-green-100";
+        else selectClass += "bg-red-50 text-red-700 border-red-200 hover:bg-red-100";
+        
+        let noteHtml = '';
+        if (currentEditNoteId === order.id) {
+           noteHtml = `
+            <div class="flex gap-2 items-center">
+              <input type="text" id="noteInput-${order.id}" class="border border-indigo-200 px-3 py-1.5 rounded-lg text-sm w-full focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-inner" value="${order.note || ''}">
+              <button onclick="saveOrderNote('${order.id}')" class="text-xs bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition">儲存</button>
+            </div>
+           `;
+        } else {
+           const noteContent = order.note ? order.note : `<span class="text-slate-400 italic">點擊新增備註...</span>`;
+           noteHtml = `
+            <div onclick="startEditNote('${order.id}')" class="flex items-center justify-between group-hover:bg-white p-2 -m-2 rounded-lg cursor-pointer transition-all border border-transparent group-hover:border-slate-200 group-hover:shadow-sm">
+              <span class="text-slate-600 text-sm truncate max-w-[200px]">${noteContent}</span>
+              <i data-lucide="edit-3" class="w-4 h-4 text-slate-300 group-hover:text-indigo-500 transition-colors opacity-0 group-hover:opacity-100"></i>
+            </div>
+           `;
+        }
+
+        html += `
+          <tr class="border-b border-slate-100 hover:bg-indigo-50/50 transition-colors group">
+            <td class="p-5 font-mono font-bold text-slate-700">#${order.sequenceId}</td>
+            <td class="p-5 font-medium text-slate-800">${order.phone}</td>
+            <td class="p-5 text-slate-600">${order.battleTag}</td>
+            <td class="p-5">
+              <select onchange="changeOrderStatus('${order.id}', this.value)" class="${selectClass}" style="background-image: url('data:image/svg+xml,%3csvg xmlns=\\'http://www.w3.org/2000/svg\\' fill=\\'none\\' viewBox=\\'0 0 20 20\\'%3e%3cpath stroke=\\'%236b7280\\' stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\' stroke-width=\\'1.5\\' d=\\'M6 8l4 4 4-4\\'/%3e%3c/svg%3e'); background-position: right 0.5rem center; background-repeat: no-repeat; background-size: 1.5em 1.5em; padding-right: 2.5rem;">
+                <option value="處理中" ${order.status === '處理中' ? 'selected' : ''}>處理中</option>
+                <option value="完成" ${order.status === '完成' ? 'selected' : ''}>完成</option>
+                <option value="取消" ${order.status === '取消' ? 'selected' : ''}>取消 (解鎖)</option>
+              </select>
+            </td>
+            <td class="p-5">
+              ${noteHtml}
+            </td>
+          </tr>
+        `;
+      });
+      tbody.innerHTML = html;
+      lucide.createIcons(); // 重新產生 icon
+    };
+
+
+    // --- 系統初始化與 Firebase 監聽 ---
+    const initApp = async () => {
+      try {
+        await signInAnonymously(auth);
+      } catch (error) {
+        console.error("Auth error:", error);
+      }
+
+      onAuthStateChanged(auth, (user) => {
+        if (user) {
+          // 隱藏載入畫面，顯示 Portal
+          document.getElementById('loadingView').classList.add('hidden-view');
+          switchAppMode('portal');
+
+          // 監聽 Orders
+          onSnapshot(collection(db, 'artifacts', appId, 'public', 'data', 'orders'), (snapshot) => {
+            orders = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+            
+            // 更新狀態列
+            if (orders.length > 0) {
+              const maxSeq = Math.max(...orders.map(o => parseInt(o.sequenceId, 10)));
+              sequenceCounter = maxSeq + 1;
+            } else {
+              sequenceCounter = 1;
+            }
+            document.getElementById('statTotalOrders').innerText = orders.length;
+            document.getElementById('statNextSeq').innerText = '#' + String(sequenceCounter).padStart(3, '0');
+            
+            // 如果在後台，重新渲染表格
+            renderOrdersTable();
+          });
+
+          // 監聽 Whitelist
+          onSnapshot(doc(db, 'artifacts', appId, 'public', 'data', 'system', 'whitelist'), (docSnap) => {
+            if (docSnap.exists()) {
+              whitelist = docSnap.data().phones || [];
+            } else {
+              const defaultPhones = ['0912345678', '0987654321', '0911111111'];
+              whitelist = defaultPhones;
+              setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'system', 'whitelist'), { phones: defaultPhones });
+            }
+            document.getElementById('statWhitelistCount').innerText = `${whitelist.length} 筆`;
+          });
+        }
+      });
+    };
+
+    // 啟動應用程式
+    lucide.createIcons();
+    initApp();
+
+  </script>
+</body>
+</html>
