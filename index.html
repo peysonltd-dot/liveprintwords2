@@ -3,12 +3,10 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>活動兌獎系統</title>
+  <title>活動報名與兌獎系統 Pro</title>
   
-  <!-- 載入 Tailwind CSS (CDN) -->
   <script src="https://cdn.tailwindcss.com"></script>
   
-  <!-- 載入 Lucide Icons (CDN) -->
   <script src="https://unpkg.com/lucide@latest"></script>
 
   <style>
@@ -19,13 +17,15 @@
       to { opacity: 1; transform: translateY(0); }
     }
     .hidden-view { display: none !important; }
+    /* 自訂卷軸樣式 */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
 <body class="bg-gray-50 font-sans text-gray-800 antialiased overflow-x-hidden">
 
-  <!-- ========================================== -->
-  <!-- 載入中畫面 (Loading)                       -->
-  <!-- ========================================== -->
   <div id="loadingView" class="min-h-screen flex items-center justify-center bg-gray-50 fixed inset-0 z-50">
     <div class="text-indigo-600 font-bold text-xl flex flex-col items-center gap-4">
       <i data-lucide="refresh-cw" class="w-8 h-8 animate-spin"></i>
@@ -33,13 +33,9 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- 前台畫面 (Frontend)                        -->
-  <!-- ========================================== -->
   <div id="frontendView" class="hidden-view bg-black min-h-screen flex items-center justify-center text-white">
     <div class="w-full max-w-md h-screen sm:h-[85vh] bg-gray-900 border border-gray-800 sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden relative">
       
-      <!-- Header -->
       <div class="bg-gray-800 text-white p-4 flex justify-between items-center shadow-md z-10 border-b border-gray-700">
         <div class="w-8"></div>
         <h1 class="text-lg font-bold">活動兌獎</h1>
@@ -48,7 +44,6 @@
         </button>
       </div>
 
-      <!-- 後台登入：密碼彈出視窗 -->
       <div id="exitPromptModal" class="hidden-view absolute inset-0 bg-black/80 z-50 flex items-center justify-center p-6">
         <div class="bg-gray-800 border border-gray-700 rounded-2xl p-6 w-full max-w-sm space-y-4 shadow-2xl">
           <h3 class="text-xl font-bold text-white text-center mb-4">系統管理員登入</h3>
@@ -66,7 +61,6 @@
 
       <div class="flex-1 overflow-y-auto p-6 flex flex-col justify-center relative">
         
-        <!-- 前台首頁 -->
         <div id="frontHome" class="space-y-6 animate-fade-in">
           <div class="text-center">
             <i data-lucide="smartphone" class="w-16 h-16 mx-auto text-blue-500 mb-4"></i>
@@ -76,7 +70,6 @@
           <button onclick="switchFrontView('status')" class="w-full py-4 bg-gray-800 hover:bg-gray-700 text-gray-200 rounded-xl font-semibold text-lg shadow transition transform hover:scale-105 border border-gray-700">查詢進度</button>
         </div>
 
-        <!-- 手機驗證 -->
         <div id="frontVerify" class="hidden-view space-y-6 animate-fade-in">
           <h2 class="text-2xl font-bold text-white border-b border-gray-700 pb-2">手機號碼驗證</h2>
           <div class="space-y-2">
@@ -90,7 +83,6 @@
           </div>
         </div>
 
-        <!-- 填寫資料 -->
         <div id="frontForm" class="hidden-view space-y-6 animate-fade-in">
           <div class="bg-blue-900/30 border border-blue-800 p-4 rounded-xl text-blue-300 text-sm mb-6 flex items-center gap-2">
             <i data-lucide="shield-check" class="w-5 h-5"></i> 驗證成功！請填寫以下資訊
@@ -104,7 +96,6 @@
           <button onclick="handleSubmit()" class="w-full py-4 bg-blue-600 text-white rounded-xl font-bold text-lg shadow-lg mt-6">確認送出</button>
         </div>
 
-        <!-- 成功畫面 -->
         <div id="frontSuccess" class="hidden-view space-y-8 text-center animate-fade-in py-8">
           <i data-lucide="check-circle" class="w-24 h-24 mx-auto text-green-500 mb-4"></i>
           <div>
@@ -115,7 +106,6 @@
           <button onclick="switchFrontView('home')" class="w-full py-4 bg-gray-800 border border-gray-700 text-white rounded-xl font-medium mt-4 hover:bg-gray-700 transition">回首頁</button>
         </div>
 
-        <!-- 查詢進度 -->
         <div id="frontStatus" class="hidden-view space-y-6 animate-fade-in">
           <h2 class="text-2xl font-bold text-white border-b border-gray-700 pb-2">查詢進度</h2>
           
@@ -133,8 +123,7 @@
           <div id="searchError" class="hidden-view p-3 bg-red-900/50 border border-red-800 text-red-200 rounded-lg"></div>
           
           <div id="searchResultCard" class="hidden-view mt-6 bg-gray-800 border border-gray-700 rounded-2xl shadow-sm overflow-hidden">
-             <!-- Javascript 動態插入查詢結果 -->
-          </div>
+             </div>
           
           <button onclick="switchFrontView('home')" class="w-full py-4 bg-gray-800 hover:bg-gray-700 text-gray-300 border border-gray-700 rounded-xl font-medium mt-6 transition">返回首頁</button>
         </div>
@@ -143,12 +132,8 @@
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- 後台主畫面 (Backend Dashboard)             -->
-  <!-- ========================================== -->
   <div id="backendView" class="hidden-view min-h-screen bg-gray-100 flex">
-    <!-- Sidebar -->
-    <div class="w-64 bg-gray-900 text-white flex flex-col shadow-xl z-20">
+    <div class="w-64 bg-gray-900 text-white flex flex-col shadow-xl z-20 shrink-0">
       <div class="p-6 border-b border-gray-800">
         <h1 class="text-xl font-black tracking-wider text-blue-400">系統管理後台</h1>
         <p class="text-xs text-gray-500 mt-2">Desktop Manager</p>
@@ -168,10 +153,8 @@
       </div>
     </div>
 
-    <!-- Main Content -->
     <div class="flex-1 flex flex-col overflow-hidden relative">
-      <!-- Header -->
-      <header class="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200 px-8 py-5 flex justify-between items-center z-10 sticky top-0">
+      <header class="bg-white/80 backdrop-blur-md shadow-sm border-b border-slate-200 px-8 py-5 flex justify-between items-center z-10 sticky top-0 shrink-0">
         <h2 id="backHeaderTitle" class="text-2xl font-bold text-slate-800 tracking-tight">訂單總覽</h2>
         <div class="flex gap-6 text-sm">
           <div class="flex flex-col items-end">
@@ -188,7 +171,6 @@
 
       <main class="flex-1 overflow-y-auto p-8">
         
-        <!-- 訂單管理分頁 -->
         <div id="backOrdersView" class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
           <div class="overflow-x-auto">
             <table class="w-full text-left border-collapse">
@@ -202,25 +184,36 @@
                 </tr>
               </thead>
               <tbody id="ordersTableBody">
-                <!-- Javascript 動態產生表格內容 -->
-              </tbody>
+                </tbody>
             </table>
           </div>
         </div>
 
-        <!-- 系統設定分頁 -->
-        <div id="backSystemView" class="hidden-view grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-6xl">
-          <!-- 匯入匯出區塊 -->
-          <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
-            <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><i data-lucide="upload" class="w-6 h-6 text-indigo-500"></i> 資料匯入與匯出</h3>
+        <div id="backSystemView" class="hidden-view grid grid-cols-1 xl:grid-cols-2 gap-8 max-w-7xl">
+          
+          <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 flex flex-col">
+            <h3 class="text-xl font-bold text-slate-800 mb-6 flex items-center gap-3"><i data-lucide="users" class="w-6 h-6 text-indigo-500"></i> 白名單與資料匯出</h3>
             
-            <div class="space-y-6">
+            <div class="space-y-6 flex-1 flex flex-col">
               <div class="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                <label class="block text-sm font-bold text-slate-700 mb-3">匯入白名單 (可輸入多筆，換行分隔)</label>
-                <textarea id="importText" class="w-full bg-white border border-slate-200 rounded-xl p-4 h-32 focus:ring-2 focus:ring-indigo-500 outline-none text-sm shadow-inner transition-all resize-none" placeholder="0912345678&#10;0987654321"></textarea>
-                <button onclick="handleImportCSV()" class="mt-4 bg-slate-800 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-slate-900 transition shadow-md flex items-center gap-2">
-                  <i data-lucide="upload" class="w-4 h-4"></i> 確定匯入名單
-                </button>
+                <label class="block text-sm font-bold text-slate-700 mb-3">新增白名單 (可輸入多筆，換行分隔)</label>
+                <div class="flex gap-2">
+                    <textarea id="importText" class="w-full bg-white border border-slate-200 rounded-xl p-3 h-20 focus:ring-2 focus:ring-indigo-500 outline-none text-sm shadow-inner transition-all resize-none" placeholder="0912345678&#10;0987654321"></textarea>
+                    <button onclick="handleImportCSV()" class="bg-slate-800 text-white px-5 rounded-xl text-sm font-bold hover:bg-slate-900 transition shadow-md flex flex-col items-center justify-center gap-1 whitespace-nowrap min-w-[80px]">
+                      <i data-lucide="plus" class="w-5 h-5"></i> 新增
+                    </button>
+                </div>
+              </div>
+
+              <div class="flex-1 flex flex-col min-h-[250px]">
+                <div class="flex justify-between items-center mb-3">
+                    <label class="block text-sm font-bold text-slate-700">目前白名單列表</label>
+                    <span id="statWhitelistCount" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg font-bold text-xs">0 筆</span>
+                </div>
+                <div class="flex-1 bg-slate-50 border border-slate-200 rounded-xl overflow-y-auto p-3 max-h-[300px]">
+                    <ul id="whitelistDisplay" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        </ul>
+                </div>
               </div>
 
               <div class="pt-6 border-t border-slate-100">
@@ -232,33 +225,23 @@
             </div>
           </div>
 
-          <!-- 危險操作區塊 -->
-          <div class="bg-white p-8 rounded-3xl shadow-sm border border-red-100">
+          <div class="bg-white p-8 rounded-3xl shadow-sm border border-red-100 h-fit">
             <h3 class="text-xl font-bold text-red-600 mb-6 flex items-center gap-3"><i data-lucide="settings" class="w-6 h-6"></i> 系統危險操作</h3>
             <div class="bg-red-50 text-red-800 p-5 rounded-2xl text-sm mb-6 border border-red-100 leading-relaxed">
               <strong class="block text-red-900 text-base mb-1">⚠️ 警告：這是一項不可逆的操作</strong>
-              執行此操作將會<strong>徹底清空所有的訂單記錄</strong>，並將下一次的報名序號重新設定回 <strong>001</strong>。請確保您已匯出備份資料。
+              執行此操作將會<strong>徹底清空所有的訂單記錄</strong>，並將下一次的報名序號重新設定回 <strong>001</strong>。請確保您已先匯出備份資料。
             </div>
             <button onclick="handleReset()" class="bg-red-600 text-white px-6 py-3 rounded-xl text-sm font-bold hover:bg-red-700 transition shadow-md shadow-red-600/20 flex items-center gap-2">
               <i data-lucide="refresh-cw" class="w-4 h-4"></i> 確認一鍵重置系統
             </button>
-            
-            <div class="mt-10 pt-6 border-t border-slate-100">
-               <div class="flex justify-between items-center bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <span class="text-slate-600 font-medium">系統目前白名單總數</span>
-                  <span id="statWhitelistCount" class="bg-indigo-100 text-indigo-700 px-3 py-1 rounded-lg font-bold text-lg">0 筆</span>
-               </div>
-            </div>
           </div>
+          
         </div>
 
       </main>
     </div>
   </div>
 
-  <!-- ========================================== -->
-  <!-- 應用程式邏輯 (Vanilla JS + Firebase Module)-->
-  <!-- ========================================== -->
   <script type="module">
     // 使用 ES Modules 載入 Firebase (v10 API)
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
@@ -309,6 +292,7 @@
       document.getElementById('exitPasswordInput').value = '';
       document.getElementById('exitPasswordError').classList.add('hidden-view');
       document.getElementById('exitPromptModal').classList.remove('hidden-view');
+      setTimeout(() => document.getElementById('exitPasswordInput').focus(), 100);
     };
 
     window.hideExitPrompt = () => {
@@ -489,16 +473,53 @@
     };
 
     // --- 後台邏輯 (Backend) ---
+    
+    // 渲染白名單畫面
+    const renderWhitelist = () => {
+      const container = document.getElementById('whitelistDisplay');
+      if (!whitelist || whitelist.length === 0) {
+        container.innerHTML = '<li class="col-span-full text-center text-slate-400 py-6 text-sm">目前沒有任何白名單資料</li>';
+        return;
+      }
+
+      let html = '';
+      whitelist.forEach(phone => {
+        html += `
+          <li class="flex justify-between items-center bg-white border border-slate-200 px-3 py-2 rounded-lg shadow-sm group">
+            <span class="font-mono text-slate-600 text-sm font-medium">${phone}</span>
+            <button onclick="removeWhitelistItem('${phone}')" class="text-slate-300 hover:text-red-500 transition opacity-0 group-hover:opacity-100 p-1">
+              <i data-lucide="x" class="w-4 h-4"></i>
+            </button>
+          </li>
+        `;
+      });
+      container.innerHTML = html;
+      lucide.createIcons();
+    };
+
+    // 刪除單筆白名單
+    window.removeWhitelistItem = async (phoneToRemove) => {
+      if(!confirm(`確定要將 ${phoneToRemove} 移出白名單嗎？`)) return;
+      
+      const updatedList = whitelist.filter(p => p !== phoneToRemove);
+      try {
+        await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'system', 'whitelist'), { phones: updatedList });
+      } catch (err) {
+        console.error(err);
+        alert("刪除失敗");
+      }
+    };
+
     window.handleImportCSV = async () => {
       const importText = document.getElementById('importText').value;
-      if (!importText.trim()) return alert("請輸入名單");
+      if (!importText.trim()) return; // 沒填就不動作
+      
       const phones = importText.split(/[\n,]+/).map(p => p.trim()).filter(p => p.length > 0);
       const uniquePhones = [...new Set([...whitelist, ...phones])];
       
       try {
         await setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'system', 'whitelist'), { phones: uniquePhones });
-        document.getElementById('importText').value = '';
-        alert(`成功匯入 ${phones.length} 筆，目前白名單共 ${uniquePhones.length} 筆`);
+        document.getElementById('importText').value = ''; // 清空輸入框，畫面會自動更新
       } catch (err) {
         console.error(err);
         alert("匯入失敗");
@@ -543,6 +564,11 @@
     window.startEditNote = (id) => {
       currentEditNoteId = id;
       renderOrdersTable(); // 重新渲染以顯示輸入框
+      // 自動 Focus (稍微延遲確保 DOM 已更新)
+      setTimeout(() => {
+          const input = document.getElementById(`noteInput-${id}`);
+          if(input) { input.focus(); input.select(); }
+      }, 50);
     };
 
     window.saveOrderNote = async (id) => {
@@ -574,7 +600,7 @@
         if (currentEditNoteId === order.id) {
            noteHtml = `
             <div class="flex gap-2 items-center">
-              <input type="text" id="noteInput-${order.id}" class="border border-indigo-200 px-3 py-1.5 rounded-lg text-sm w-full focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-inner" value="${order.note || ''}">
+              <input type="text" id="noteInput-${order.id}" class="border border-indigo-200 px-3 py-1.5 rounded-lg text-sm w-full focus:ring-2 focus:ring-indigo-500 focus:outline-none shadow-inner" value="${order.note || ''}" onkeydown="if(event.key === 'Enter') saveOrderNote('${order.id}')">
               <button onclick="saveOrderNote('${order.id}')" class="text-xs bg-indigo-600 text-white px-3 py-2 rounded-lg font-bold shadow-sm hover:bg-indigo-700 transition">儲存</button>
             </div>
            `;
@@ -653,6 +679,7 @@
               setDoc(doc(db, 'artifacts', appId, 'public', 'data', 'system', 'whitelist'), { phones: defaultPhones });
             }
             document.getElementById('statWhitelistCount').innerText = `${whitelist.length} 筆`;
+            renderWhitelist(); // 渲染白名單 UI
           });
         }
       });
