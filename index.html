@@ -420,19 +420,32 @@
         lucide.createIcons();
         return;
       }
-      if (!whitelist.includes(phone)) {
-        errBox.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5"></i> 驗證失敗：請向工作人員確認`;
-        errBox.classList.remove('hidden-view');
-        lucide.createIcons();
-        return;
-      }
 
-      const existingOrder = orders.find(o => o.phone === phone && o.status !== '取消');
-      if (existingOrder) {
-        errBox.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5"></i> 此手機號碼已成功提交過了`;
-        errBox.classList.remove('hidden-view');
-        lucide.createIcons();
-        return;
+      // --- 號碼規則設定 ---
+      const UNIVERSAL_PHONE = "20260502"; // 萬用號碼：無限次數、免加白名單
+      const SPECIAL_PHONE_4_TIMES = "0938765033"; // ★重要：這組號碼可使用四次
+
+      if (phone !== UNIVERSAL_PHONE) {
+        // 檢查是否在白名單內
+        if (!whitelist.includes(phone)) {
+          errBox.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5"></i> 驗證失敗：請向工作人員確認`;
+          errBox.classList.remove('hidden-view');
+          lucide.createIcons();
+          return;
+        }
+
+        // 計算已使用次數 (排除取消的訂單)
+        const usedCount = orders.filter(o => o.phone === phone && o.status !== '取消').length;
+        
+        // 判斷可用次數上限：如果是特殊號碼給4次，其餘一律只給1次
+        const maxUses = (phone === SPECIAL_PHONE_4_TIMES) ? 4 : 1;
+
+        if (usedCount >= maxUses) {
+          errBox.innerHTML = `<i data-lucide="x-circle" class="w-5 h-5"></i> 此號碼已達使用上限 (${maxUses}次)`;
+          errBox.classList.remove('hidden-view');
+          lucide.createIcons();
+          return;
+        }
       }
 
       currentUserPhone = phone;
